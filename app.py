@@ -639,7 +639,7 @@ if login():
                     filtered_df = filtered_df[filtered_df['발생 호기'].isin(selected_macs)]
 
             all_cols = [c for c in list(filtered_df.columns) if c != '__wt_ton']
-            display_order = ["처리 예정일", "처리 완료"] + [c for c in all_cols if c not in ["처리 예정일", "처리 완료", "__sheet_row_idx"]]
+            display_order = ["처리 예정일", "처리 완료"] + [c for c in all_cols if c not in ["처리 예정일", "처리 완료", "요일", "__sheet_row_idx"]]
             
             try:
                 edited_df = st.data_editor(

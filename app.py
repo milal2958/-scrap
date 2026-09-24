@@ -8,6 +8,13 @@ import plotly.express as px
 import plotly.graph_objects as go
 import hashlib
 import time
+import json
+import secrets
+from pathlib import Path
+import streamlit.components.v1 as components
+from remember_login import (
+    REMEMBER_SECONDS, derive_key, issue_token, read_token, credentials_match,
+)
 
 # --- 1. 페이지 설정 및 디자인 ---
 st.set_page_config(page_title="정련Sub팀 스크랩 관리 시스템 v4.8", page_icon="⚙️", layout="wide")
@@ -92,11 +99,89 @@ def connect_google_sheet_client():
 
 
 # --- 3. 구글 시트 동적 연동 로그인 로직 ---
+_login_cookie = components.declare_component(
+    "scrap_login_cookie", path=str(Path(__file__).parent / "auth_cookie")
+)
+
+
+def login_signing_key():
+    # Optional dedicated secret; otherwise derive a separate key from the existing
+    # server-only service-account key. Neither key is sent to the browser.
+    secret = os.environ.get("AUTH_COOKIE_SECRET")
+    try:
+        secret = secret or st.secrets.get("auth_cookie_secret")
+        if not secret and "gcp_service_account" in st.secrets:
+            secret = st.secrets["gcp_service_account"].get("private_key")
+    except FileNotFoundError:
+        pass
+    if not secret and os.path.exists("secrets.json"):
+        with open("secrets.json", encoding="utf-8") as source:
+            secret = json.load(source).get("private_key")
+    return derive_key(secret) if secret else None
+
+
+def user_credentials(client):
+    records = client.open("현장스크랩데이터").worksheet("사용자정보").get_all_records()
+    credentials = {}
+    for row in records:
+        row = {str(k).strip(): v for k, v in row.items()}
+        user_id = str(row.get("사번", "")).split(".")[0].strip()
+        if user_id:
+            credentials[user_id] = str(row.get("비밀번호", "")).strip()
+    return credentials
+
+
+def queue_login_cookie(value=""):
+    st.session_state["login_cookie_command"] = {
+        "id": secrets.token_hex(16), "value": value,
+        "expires": int(time.time()) + REMEMBER_SECONDS if value else 0,
+    }
+
+
+def clear_login():
+    # Drop cached tables and editor state when switching users on a shared device.
+    st.session_state.clear()
+    st.session_state["logged_in"] = False
+    st.session_state["login_restore_attempted"] = True
+    queue_login_cookie()
+
+
 def login():
+    command = st.session_state.get("login_cookie_command")
+    browser = _login_cookie(command=command, default=None, key="login_cookie_bridge")
+    if browser is None or (command and browser.get("ack") != command["id"]):
+        # Wait for an acknowledgement, rather than rerunning before cookie writes finish.
+        st.stop()
+    if command:
+        del st.session_state["login_cookie_command"]
+        if browser.get("error"):
+            st.warning("브라우저에서 로그인 정보를 저장하지 못했습니다. 쿠키 허용 설정을 확인해 주세요.")
+    signing_key = login_signing_key()
     if "logged_in" not in st.session_state:
         st.session_state["logged_in"] = False
+    if not st.session_state["logged_in"] and not st.session_state.get("login_restore_attempted"):
+        st.session_state["login_restore_attempted"] = True
+        token = browser.get("token", "")
+        payload = read_token(signing_key, token) if signing_key and token else None
+        if payload:
+            client = connect_google_sheet_client()
+            if client:
+                try:
+                    if credentials_match(signing_key, payload, user_credentials(client)):
+                        st.session_state["logged_in"] = True
+                        st.session_state["user_id"] = payload["user"]
+                    else:
+                        queue_login_cookie()
+                        st.rerun()
+                except Exception:
+                    st.warning("저장된 로그인을 확인하지 못했습니다. 다시 로그인해 주세요.")
+        elif token:
+            queue_login_cookie()
+            st.rerun()
     if not st.session_state["logged_in"]:
         st.subheader("⚙️ 정련Sub팀 시스템 로그인")
+        if st.session_state.pop("password_changed", False):
+            st.success("비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.")
         
         login_container = st.container()
         with login_container.form("login_form"):
@@ -111,26 +196,21 @@ def login():
             
             user_id = st.text_input("아이디(ID)").strip()
             user_pw = st.text_input("비밀번호(PW)", type="password")
+            remember = st.checkbox("로그인 유지 (30일)", value=True, disabled=signing_key is None,
+                                   help="공용 PC에서는 선택을 해제해 주세요.")
             submit_btn = st.form_submit_button("로그인")
                 
             if submit_btn:
                 sheet_client = connect_google_sheet_client()
                 if sheet_client:
                     try:
-                        user_sheet = sheet_client.open("현장스크랩데이터").worksheet("사용자정보")
-                        user_records = user_sheet.get_all_records()
-                        
-                        USER_CREDENTIALS = {}
-                        for row in user_records:
-                            clean_row = {str(k).strip(): v for k, v in row.items()}
-                            k = str(clean_row.get('사번', '')).split('.')[0].strip()
-                            v = str(clean_row.get('비밀번호', '')).strip()
-                            if k:
-                                USER_CREDENTIALS[k] = v
+                        USER_CREDENTIALS = user_credentials(sheet_client)
                         
                         if user_id in USER_CREDENTIALS and USER_CREDENTIALS[user_id] == hash_password(user_pw):
                             st.session_state["logged_in"] = True
                             st.session_state["user_id"] = user_id
+                            token = issue_token(signing_key, user_id, USER_CREDENTIALS[user_id]) if remember and signing_key else ""
+                            queue_login_cookie(token)
                             st.rerun()
                         else: 
                             st.error("❌ 아이디 또는 비밀번호가 틀렸습니다.")
@@ -250,18 +330,14 @@ if login():
                             elif found_row_idx:
                                 hashed_new = hash_password(new_pw)
                                 user_sheet.update_cell(found_row_idx, 2, hashed_new)
-                                st.success("🎉 비밀번호가 안전하게 변경되었습니다!")
-                                time.sleep(1)
-                                if "raw_df" in st.session_state: del st.session_state["raw_df"]
-                                if "dispose_df" in st.session_state: del st.session_state["dispose_df"]
+                                clear_login()
+                                st.session_state["password_changed"] = True
                                 st.rerun()
                         except Exception as e:
                             st.error(f"⚠️ 시트 수정 중 오류 발생: {e}")
     
     if st.sidebar.button("🔒 로그아웃"):
-        st.session_state["logged_in"] = False
-        if "raw_df" in st.session_state: del st.session_state["raw_df"]
-        if "dispose_df" in st.session_state: del st.session_state["dispose_df"]
+        clear_login()
         st.rerun()
 
     st.markdown(

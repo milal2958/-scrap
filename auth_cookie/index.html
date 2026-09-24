@@ -1,0 +1,40 @@
+<!doctype html>
+<html><head><meta charset="utf-8"></head><body>
+<script>
+// Same-origin Streamlit component; no external scripts or browser-stored passwords.
+const cookieName = "scrap_remember_login_v1";
+let lastResult = "";
+let applied = null;
+function send(type, extra = {}) {
+  window.parent.postMessage({isStreamlitMessage: true, type, ...extra}, "*");
+}
+function readCookie() {
+  const part = document.cookie.split("; ").find(p => p.startsWith(cookieName + "="));
+  return part ? decodeURIComponent(part.slice(cookieName.length + 1)) : "";
+}
+window.addEventListener("message", event => {
+  if (event.source !== window.parent || event.data.type !== "streamlit:render") return;
+  const command = event.data.args.command;
+  let error = false;
+  let token = "";
+  try {
+    if (command && command.id !== applied) {
+      const secure = location.protocol === "https:" ? "; Secure" : "";
+      const maxAge = command.value ? Math.max(0, Math.floor(command.expires - Date.now() / 1000)) : 0;
+      document.cookie = cookieName + "=" + encodeURIComponent(command.value)
+        + "; Path=/; SameSite=Lax; Max-Age=" + maxAge + secure;
+      applied = command.id;
+    }
+    token = readCookie();
+    if (command && token !== command.value) error = true;
+  } catch (_) { error = true; }
+  const value = {token, ack: command ? command.id : null, error};
+  const encoded = JSON.stringify(value);
+  if (encoded !== lastResult) {
+    lastResult = encoded;
+    send("streamlit:setComponentValue", {value, dataType: "json"});
+  }
+  send("streamlit:setFrameHeight", {height: 0});
+});
+send("streamlit:componentReady", {apiVersion: 1});
+</script></body></html>

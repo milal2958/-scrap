@@ -368,7 +368,7 @@ if login():
         with st.container():
             reg_type = st.radio(
                 "📋 보류고무 성격 분류 선택", 
-                ["스크랩 관련 고무보류", "부적합 처리 전 고무보류", "기타 다른 사유로 고무보류"], 
+                ["스크랩 관련 고무보류", "부적합 처리 전 고무보류", "기타 다른 사유로 고무보류"],\r\n                index=0, 
                 horizontal=True, 
                 key="reg_type_input"
             )

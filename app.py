@@ -55,6 +55,30 @@ st.markdown("""
             margin-bottom: 6px !important;
             font-size: 0.9rem !important;
         }
+        /* 모바일: 제목·표·저장 버튼이 화면 폭을 넘지 않도록 조정 */
+        h4 {
+            font-size: 1.05rem !important;
+            line-height: 1.25 !important;
+            word-break: keep-all !important;
+        }
+        div[data-testid="stDataEditor"] {
+            max-width: 100vw !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+        div[data-testid="stDataEditor"] > div {
+            min-width: 760px !important;
+        }
+        div[data-testid="stButton"] > button {
+            min-height: 2.6rem !important;
+            width: 100% !important;
+            font-size: 0.95rem !important;
+        }
+        div[data-testid="stTabs"] button {
+            font-size: 0.82rem !important;
+            padding-left: 0.35rem !important;
+            padding-right: 0.35rem !important;
+        }
     }
     
     .metric-card {

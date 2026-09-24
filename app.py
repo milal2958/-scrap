@@ -629,18 +629,6 @@ if login():
 
             # --- [그리드 1] 보류고무 발생 현황 대시보드 ---
             st.markdown("#### 📥 1. 현장 보류고무 발생 및 마스터 관리 현황")
-            # 분류별 빠른 조회 탭 (편집·저장은 아래 통합 표에서 유지)
-            category_tabs = st.tabs(["🟦 스크랩 관련", "🟧 부적합 처리 전", "🟩 기타 사유"])
-            category_names = ["스크랩 관련 고무보류", "부적합 처리 전 고무보류", "기타 다른 사유로 고무보류"]
-            for category_tab, category_name in zip(category_tabs, category_names):
-                with category_tab:
-                    category_df = df[df["보류고무 성격"] == category_name] if "보류고무 성격" in df.columns else pd.DataFrame()
-                    st.caption(f"{category_name} · {len(category_df)}건")
-                    if category_df.empty:
-                        st.info("해당 분류의 데이터가 없습니다.")
-                    else:
-                        preview_cols = [c for c in ["처리 예정일", "처리 완료", "날짜", "생산 조", "발생 호기", "Comp'd명", "발생량"] if c in category_df.columns]
-                        st.dataframe(category_df[preview_cols], hide_index=True, use_container_width=True)
             filtered_df = df.copy()
             if selected_completion != "전체" and '처리 완료' in filtered_df.columns:
                 filtered_df = filtered_df[filtered_df['처리 완료'] == (selected_completion == "완료")]

@@ -519,15 +519,18 @@ if login():
 
             st.markdown("---")
             st.write("🔍 **데이터 테이블 필터링**")
-            f_col1, f_col2 = st.columns(2)
+            f_col1, f_col2, f_col3 = st.columns(3)
             mac_options = list(df['발생 호기'].unique()) if '발생 호기' in df.columns else MAC_LIST
             
             with f_col1: selected_shifts = st.multiselect("생산 조 필터", options=["전체", "A조", "B조", "C조", "D조"], default=["전체"], key="sel_shift_filter")
             with f_col2: selected_macs = st.multiselect("발생 호기 필터", options=["전체"] + mac_options, default=["전체"], key="sel_mac_filter")
+            with f_col3: selected_completion = st.selectbox("보류고무 처리 상태", options=["미완료", "완료"], index=0, key="sel_completion_filter")
 
             # --- [그리드 1] 보류고무 발생 현황 대시보드 ---
             st.markdown("#### 📥 1. 현장 보류고무 발생 및 마스터 관리 현황")
             filtered_df = df.copy()
+            if '처리 완료' in filtered_df.columns:
+                filtered_df = filtered_df[filtered_df['처리 완료'] == (selected_completion == "완료")]
             if "전체" not in selected_shifts and selected_shifts:
                 filtered_df = filtered_df[filtered_df['생산 조'].isin(selected_shifts)]
             if "전체" not in selected_macs and selected_macs:

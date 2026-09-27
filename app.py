@@ -818,10 +818,28 @@ if login():
             if "발생 호기" in df_analysis.columns and "추정 원인" in df_analysis.columns and "__wt_ton" in df_analysis.columns:
                 analysis_cause = df_analysis["추정 원인"].fillna("").astype(str).str.strip()
                 if "발생상황 상세 설명" in df_analysis.columns:
-                    detail = df_analysis["발생상황 상세 설명"].fillna("").astype(str).str.strip()
-                    meaningful_detail = detail.ne("") & ~detail.str.lower().isin(["-", "없음", "기타", "미입력", "none", "nan"])
+                    detail = (
+                        df_analysis["발생상황 상세 설명"]
+                        .fillna("")
+                        .astype(str)
+                        .str.strip()
+                        .str.replace(r"\\s+", " ", regex=True)
+                        .str.lower()
+                    )
+                    # 같은 의미의 기타 사유를 대표 명칭으로 통합
+                    detail_group = detail.copy()
+                    keyword_groups = [
+                        ("시트/스코치 관련", ["시트", "sheet", "스코치", "scorch"]),
+                        ("로터/말림 관련", ["로터", "말림", "롤러"]),
+                        ("작업/공정 관련", ["작업", "공정", "조건"]),
+                        ("부적합/규격 관련", ["부적합", "규격", "치수", "형상"]),
+                    ]
+                    for label, keywords in keyword_groups:
+                        mask = detail_group.str.contains("|".join(keywords), na=False)
+                        detail_group = detail_group.mask(mask, label)
+                    meaningful_detail = detail_group.ne("") & ~detail_group.isin(["-", "없음", "기타", "미입력", "none", "nan"])
                     detailed_other = (analysis_cause == "기타") & meaningful_detail
-                    analysis_cause = analysis_cause.mask(detailed_other, "기타: " + detail)
+                    analysis_cause = analysis_cause.mask(detailed_other, "기타: " + detail_group)
                 analysis_for_pivot = df_analysis.assign(__analysis_cause=analysis_cause)
                 cause_machine_table = analysis_for_pivot.pivot_table(
                     index="__analysis_cause",

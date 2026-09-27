@@ -618,13 +618,29 @@ if login():
                     missing_count, missing_weight = len(df_missing), df_missing['__wt_ton'].sum()
                     
                     with st.expander(f"** Worker {shift_name} 현황**", expanded=True):
-                        st.markdown(f"""
-                        <div class="metric-card">
-                            <span style='color:#0052CC; font-weight:bold;'>📅 처리대기:</span> {plan_count}건 / <b>{plan_weight:.1f} ton</b><br>
-                            <span style='color:#7ED321; font-weight:bold;'>✅ 처리완료:</span> {done_count}건 / <b>{done_weight:.1f} ton</b><br>
-                            <span style='color:#F5A623; font-weight:bold;'>⚠️ 미입력건:</span> {missing_count}건 / <b>{missing_weight:.1f} ton</b>
-                        </div>
-                        """, unsafe_allow_html=True)
+                        status_chart_df = pd.DataFrame({
+                            "상태": ["처리완료", "미입력건"],
+                            "건수": [done_count, missing_count],
+                        })
+                        status_chart = px.pie(
+                            status_chart_df,
+                            names="상태",
+                            values="건수",
+                            hole=0.38,
+                            color="상태",
+                            color_discrete_map={"처리완료": "#7ED321", "미입력건": "#F5A623"},
+                        )
+                        status_chart.update_traces(
+                            textinfo="label+value",
+                            hovertemplate="%{label}: %{value}건<extra></extra>",
+                        )
+                        status_chart.update_layout(
+                            height=190,
+                            margin=dict(t=8, b=8, l=8, r=8),
+                            showlegend=False,
+                            title=dict(text=f"{shift_name} · 총 {done_count + missing_count}건", font=dict(size=14)),
+                        )
+                        st.plotly_chart(status_chart, use_container_width=True, config={"displayModeBar": False})
 
             st.markdown("---")
             st.write("🔍 **데이터 테이블 필터링**")

@@ -645,10 +645,24 @@ if login():
                 if split_df.empty:
                     st.info("해당 분류의 데이터가 없습니다.")
                 else:
-                    split_cols = [c for c in ["처리 예정일", "처리 완료", "날짜", "생산 조", "발생 호기", "Comp'd명", "발생량", "단위"] if c in split_df.columns]
+                    split_cols = [c for c in split_df.columns if c not in ["__wt_ton", "__sheet_row_idx", "요일"]]
                     split_view = split_df[split_cols].copy()
                     split_key = re.sub(r"[^a-zA-Z0-9_]", "_", split_category)
-                    st.data_editor(split_view, hide_index=True, use_container_width=True, key=f"split_editor_{split_key}", column_config={"처리 완료": st.column_config.CheckboxColumn("✅ 완료")})
+                    st.data_editor(
+                        split_view,
+                        column_order=[col for col in ["처리 예정일", "처리 완료"] + split_cols if col not in ["처리 예정일", "처리 완료"]],
+                        hide_index=True,
+                        use_container_width=True,
+                        height=420,
+                        key=f"split_editor_{split_key}",
+                        column_config={
+                            "처리 예정일": st.column_config.DateColumn("📅 처리 예정일", format="YYYY-MM-DD"),
+                            "처리 완료": st.column_config.CheckboxColumn("✅ 완료"),
+                            "날짜": st.column_config.DateColumn("생산 일자", disabled=True),
+                            "보류고무 성격": st.column_config.TextColumn("📋 보류고무 성격", disabled=True),
+                            "발생량": st.column_config.NumberColumn("발생량", disabled=True),
+                        },
+                    )
                     if st.button(f"💾 {split_category} 변경사항 저장", key=f"split_save_{split_key}"):
                         editor_state = st.session_state.get(f"split_editor_{split_key}", {})
                         edited_rows = editor_state.get("edited_rows", {})

@@ -724,14 +724,23 @@ if login():
                 if "전체" not in selected_shifts and selected_shifts:
                     if '실적 기록 조' in filtered_disp.columns:
                         filtered_disp = filtered_disp[filtered_disp['실적 기록 조'].isin(selected_shifts)]
-                if "폐기 일자" in filtered_disp.columns:
-                    filtered_disp["폐기 일자"] = pd.to_datetime(filtered_disp["폐기 일자"], errors="coerce")
+                # 실제 처리일(기록 일시) 기준 최신순 정렬
+                if "기록 일시" in filtered_disp.columns:
+                    filtered_disp["__sort_processed_at"] = pd.to_datetime(filtered_disp["기록 일시"], errors="coerce")
                     filtered_disp = filtered_disp.sort_values(
-                        by="폐기 일자",
+                        by="__sort_processed_at",
                         ascending=False,
                         na_position="last",
                         kind="stable",
-                    )
+                    ).drop(columns=["__sort_processed_at"])
+                elif "처리일" in filtered_disp.columns:
+                    filtered_disp["__sort_processed_at"] = pd.to_datetime(filtered_disp["처리일"], errors="coerce")
+                    filtered_disp = filtered_disp.sort_values(
+                        by="__sort_processed_at",
+                        ascending=False,
+                        na_position="last",
+                        kind="stable",
+                    ).drop(columns=["__sort_processed_at"])
                 
                 disp_cols_order = [c for c in list(filtered_disp.columns) if c != "__sheet_row_idx"]
                 

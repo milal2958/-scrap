@@ -949,6 +949,53 @@ if login():
                     fig_status.update_xaxes(showgrid=False, showticklabels=False, ticks="", zeroline=False, range=[0, max_val_status * 1.35])
                     fig_status.update_yaxes(showgrid=False, zeroline=False, tickfont=dict(size=13, family='Pretendard, sans-serif', weight='bold'))
                     st.plotly_chart(fig_status, use_container_width=True, config={'displayModeBar': False})
+            # --- 5. 스크랩 처리 분석 ---
+            st.markdown("---")
+            st.markdown("### 🚛 5. 스크랩 처리 분석")
+            scrap_df = df_filtered[df_filtered["처리 판단"] == "스크랩장 이동"].copy() if "처리 판단" in df_filtered.columns else pd.DataFrame()
+            if scrap_df.empty:
+                st.info("선택한 기간에 '스크랩장 이동' 처리 데이터가 없습니다.")
+            else:
+                scrap_count = len(scrap_df)
+                scrap_ton = scrap_df["__wt_ton"].sum() if "__wt_ton" in scrap_df.columns else 0
+                m1, m2 = st.columns(2)
+                with m1: st.metric("스크랩장 이동 건수", f"{scrap_count:,}건")
+                with m2: st.metric("스크랩장 이동 중량", f"{scrap_ton:.1f} ton")
+
+                sc1, sc2 = st.columns(2)
+                with sc1:
+                    if "생산 조" in scrap_df.columns:
+                        by_shift = scrap_df.groupby("생산 조")["__wt_ton"].sum().sort_values(ascending=False).reset_index()
+                        by_shift["중량"] = by_shift["__wt_ton"].round(1)
+                        fig_shift_scrap = px.bar(by_shift, x="생산 조", y="__wt_ton", text="중량", title="조별 스크랩장 이동 중량")
+                        fig_shift_scrap.update_traces(textposition="outside", marker_color="#4A90E2")
+                        fig_shift_scrap.update_layout(height=330, margin=dict(t=55, b=25, l=10, r=20), yaxis_title="중량 (ton)", xaxis_title="")
+                        st.plotly_chart(fig_shift_scrap, use_container_width=True, config={"displayModeBar": False})
+                with sc2:
+                    if "발생 호기" in scrap_df.columns:
+                        by_machine = scrap_df.groupby("발생 호기")["__wt_ton"].sum().sort_values(ascending=False).reset_index()
+                        by_machine["중량"] = by_machine["__wt_ton"].round(1)
+                        fig_machine_scrap = px.bar(by_machine, x="발생 호기", y="__wt_ton", text="중량", title="설비별 스크랩장 이동 중량")
+                        fig_machine_scrap.update_traces(textposition="outside", marker_color="#7ED321")
+                        fig_machine_scrap.update_layout(height=330, margin=dict(t=55, b=25, l=10, r=20), yaxis_title="중량 (ton)", xaxis_title="")
+                        st.plotly_chart(fig_machine_scrap, use_container_width=True, config={"displayModeBar": False})
+
+                if "추정 원인" in scrap_df.columns:
+                    by_cause = scrap_df.groupby("추정 원인")["__wt_ton"].sum().sort_values(ascending=True).reset_index()
+                    by_cause["중량"] = by_cause["__wt_ton"].round(1)
+                    fig_cause_scrap = px.bar(by_cause, x="__wt_ton", y="추정 원인", orientation="h", text="중량", title="스크랩장 이동 추정 원인별 중량")
+                    fig_cause_scrap.update_traces(textposition="outside", marker_color="#F5A623")
+                    fig_cause_scrap.update_layout(height=360, margin=dict(t=55, b=25, l=10, r=90), xaxis_title="중량 (ton)", yaxis_title="")
+                    st.plotly_chart(fig_cause_scrap, use_container_width=True, config={"displayModeBar": False})
+
+                if "날짜_dt" in scrap_df.columns and "생산 조" in scrap_df.columns:
+                    monthly_scrap = scrap_df.groupby(scrap_df["날짜_dt"].dt.to_period("M").astype(str))["__wt_ton"].sum().reset_index(name="중량")
+                    monthly_scrap["중량"] = monthly_scrap["중량"].round(1)
+                    fig_monthly_scrap = px.line(monthly_scrap, x="날짜_dt", y="중량", markers=True, text="중량", title="월별 스크랩장 이동 추이")
+                    fig_monthly_scrap.update_traces(textposition="top center", line_color="#D0021B")
+                    fig_monthly_scrap.update_layout(height=330, margin=dict(t=55, b=25, l=10, r=20), yaxis_title="중량 (ton)", xaxis_title="생산 월")
+                    st.plotly_chart(fig_monthly_scrap, use_container_width=True, config={"displayModeBar": False})
+
             else:
                 st.warning("⚠️ 선택한 기간에 해당하는 분석 데이터가 존재하지 않습니다.")
         else:

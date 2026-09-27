@@ -831,9 +831,10 @@ if login():
                 ).reindex(columns=machine_cols, fill_value=0).fillna(0)
                 # 기타(상세사유가 없는 항목)는 항상 마지막 행에 배치
                 other_rows = [idx for idx in cause_machine_table.index if idx == "기타"]
+                other_frame = cause_machine_table.loc[other_rows].copy() if other_rows else pd.DataFrame(columns=cause_machine_table.columns)
                 cause_machine_table = cause_machine_table.drop(index=other_rows, errors="ignore")
-                if other_rows:
-                    cause_machine_table = pd.concat([cause_machine_table, cause_machine_table.loc[other_rows]])
+                if not other_frame.empty:
+                    cause_machine_table = pd.concat([cause_machine_table, other_frame])
                 cause_machine_table.index.name = "트러블 사유"
                 cause_machine_table.columns.name = "설비"
                 st.dataframe(

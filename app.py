@@ -989,11 +989,15 @@ if login():
                     st.plotly_chart(fig_cause_scrap, use_container_width=True, config={"displayModeBar": False})
 
                 if "날짜_dt" in scrap_df.columns and "생산 조" in scrap_df.columns:
-                    monthly_scrap = scrap_df.groupby(scrap_df["날짜_dt"].dt.to_period("M").astype(str))["__wt_ton"].sum().reset_index(name="중량")
+                    monthly_scrap = scrap_df.groupby(
+                        scrap_df["날짜_dt"].dt.to_period("M").astype(str)
+                    )["__wt_ton"].sum().reset_index(name="중량")
+                    monthly_scrap = monthly_scrap.rename(columns={"날짜_dt": "생산 월"})
                     monthly_scrap["중량"] = monthly_scrap["중량"].round(1)
-                    fig_monthly_scrap = px.line(monthly_scrap, x="날짜_dt", y="중량", markers=True, text="중량", title="월별 스크랩장 이동 추이")
+                    fig_monthly_scrap = px.line(monthly_scrap, x="생산 월", y="중량", markers=True, text="중량", title="월별 스크랩장 이동 추이")
                     fig_monthly_scrap.update_traces(textposition="top center", line_color="#D0021B")
                     fig_monthly_scrap.update_layout(height=330, margin=dict(t=55, b=25, l=10, r=20), yaxis_title="중량 (ton)", xaxis_title="생산 월")
+                    fig_monthly_scrap.update_xaxes(type="category")
                     st.plotly_chart(fig_monthly_scrap, use_container_width=True, config={"displayModeBar": False})
 
             if df_filtered.empty:

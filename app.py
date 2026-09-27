@@ -812,6 +812,27 @@ if login():
     with tab4:
         df_analysis = st.session_state["raw_df"].copy() if "raw_df" in st.session_state else get_data()
         if not df_analysis.empty:
+            # 전체 데이터를 기준으로 설비별 트러블 사유 중량 피벗표
+            st.markdown("### 🏭 설비별 트러블 사유 중량 현황 (전체 데이터)")
+            machine_cols = [f"A{i}" for i in range(1002, 1014)]
+            if "발생 호기" in df_analysis.columns and "추정 원인" in df_analysis.columns and "__wt_ton" in df_analysis.columns:
+                cause_machine_table = df_analysis.pivot_table(
+                    index="추정 원인",
+                    columns="발생 호기",
+                    values="__wt_ton",
+                    aggfunc="sum",
+                    fill_value=0,
+                ).reindex(columns=machine_cols, fill_value=0).fillna(0)
+                cause_machine_table.index.name = "트러블 사유"
+                cause_machine_table.columns.name = "설비"
+                st.dataframe(
+                    cause_machine_table.style.format("{:.1f}"),
+                    use_container_width=True,
+                    height=430,
+                )
+            else:
+                st.info("설비별 원인 분석에 필요한 데이터 열이 없습니다.")
+
             df_analysis = df_analysis.dropna(subset=['날짜'])
             df_analysis['날짜_dt'] = pd.to_datetime(df_analysis['날짜'])
             df_analysis['년월'] = df_analysis['날짜_dt'].dt.strftime('%Y-%m')

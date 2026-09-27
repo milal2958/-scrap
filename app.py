@@ -619,8 +619,8 @@ if login():
                     
                     with st.expander(f"Worker {shift_name} 현황", expanded=True):
                         status_chart_df = pd.DataFrame({
-                            "상태": ["처리완료", "미입력건"],
-                            "건수": [done_count, missing_count],
+                            "상태": ["미입력건", "처리완료"],
+                            "건수": [missing_count, done_count],
                         })
                         status_chart = px.pie(
                             status_chart_df,

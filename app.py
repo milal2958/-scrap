@@ -816,13 +816,24 @@ if login():
             st.markdown("### 🏭 설비별 트러블 사유 중량 현황 (전체 데이터)")
             machine_cols = [f"A{i}" for i in range(1002, 1014)]
             if "발생 호기" in df_analysis.columns and "추정 원인" in df_analysis.columns and "__wt_ton" in df_analysis.columns:
-                cause_machine_table = df_analysis.pivot_table(
-                    index="추정 원인",
+                analysis_cause = df_analysis["추정 원인"].fillna("").astype(str).str.strip()
+                if "발생상황 상세 설명" in df_analysis.columns:
+                    detail = df_analysis["발생상황 상세 설명"].fillna("").astype(str).str.strip()
+                    detailed_other = (analysis_cause == "기타") & detail.ne("")
+                    analysis_cause = analysis_cause.mask(detailed_other, "기타: " + detail)
+                analysis_for_pivot = df_analysis.assign(__analysis_cause=analysis_cause)
+                cause_machine_table = analysis_for_pivot.pivot_table(
+                    index="__analysis_cause",
                     columns="발생 호기",
                     values="__wt_ton",
                     aggfunc="sum",
                     fill_value=0,
                 ).reindex(columns=machine_cols, fill_value=0).fillna(0)
+                # 기타(상세사유가 없는 항목)는 항상 마지막 행에 배치
+                other_rows = [idx for idx in cause_machine_table.index if idx == "기타"]
+                cause_machine_table = cause_machine_table.drop(index=other_rows, errors="ignore")
+                if other_rows:
+                    cause_machine_table = pd.concat([cause_machine_table, cause_machine_table.loc[other_rows]])
                 cause_machine_table.index.name = "트러블 사유"
                 cause_machine_table.columns.name = "설비"
                 st.dataframe(

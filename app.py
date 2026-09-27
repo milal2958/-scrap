@@ -617,7 +617,7 @@ if login():
                     plan_count, plan_weight = len(df_plan), df_plan['__wt_ton'].sum()
                     missing_count, missing_weight = len(df_missing), df_missing['__wt_ton'].sum()
                     
-                    with st.expander(f"** Worker {shift_name} 현황**", expanded=True):
+                    with st.expander(f"Worker {shift_name} 현황", expanded=True):
                         status_chart_df = pd.DataFrame({
                             "상태": ["처리완료", "미입력건"],
                             "건수": [done_count, missing_count],
@@ -635,8 +635,8 @@ if login():
                             hovertemplate="%{label}: %{value}건<extra></extra>",
                         )
                         status_chart.update_layout(
-                            height=190,
-                            margin=dict(t=8, b=8, l=8, r=8),
+                            height=230,
+                            margin=dict(t=38, b=18, l=12, r=12),
                             showlegend=False,
                             title=dict(text=f"{shift_name} · 총 {done_count + missing_count}건", font=dict(size=14)),
                         )

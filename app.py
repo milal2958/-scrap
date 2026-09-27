@@ -63,12 +63,15 @@ st.markdown("""
             word-break: keep-all !important;
         }
         div[data-testid="stDataEditor"] {
-            max-width: 100vw !important;
+            width: 100% !important;
+            max-width: 100% !important;
             overflow-x: auto !important;
+            overflow-y: hidden !important;
             -webkit-overflow-scrolling: touch !important;
         }
         div[data-testid="stDataEditor"] > div {
-            min-width: 760px !important;
+            width: max-content !important;
+            min-width: 100% !important;
         }
         div[data-testid="stButton"] > button {
             min-height: 2.6rem !important;

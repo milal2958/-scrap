@@ -662,7 +662,7 @@ if login():
                         height=420,
                         key=f"split_editor_{split_key}",
                         column_config={
-                            "처리 예정일": st.column_config.DateColumn("📅 처리 예정일", format="YYYY-MM-DD"),
+                            "처리 예정일": st.column_config.DateColumn("🕒 최종 수정일자", format="YYYY-MM-DD HH:mm", disabled=True),
                             "처리 완료": st.column_config.CheckboxColumn("✅ 완료"),
                             "날짜": st.column_config.DateColumn("생산 일자", disabled=True),
                             "보류고무 성격": st.column_config.TextColumn("📋 보류고무 성격", disabled=True),
@@ -686,6 +686,9 @@ if login():
                                         if col_name in col_map:
                                             value = "TRUE" if col_name == "처리 완료" and value else ("FALSE" if col_name == "처리 완료" else value)
                                             batch_cells.append({"range": gspread.utils.rowcol_to_a1(sheet_row, col_map[col_name]), "values": [[str(value) if value is not None else ""]]})
+                                    if "처리 예정일" in col_map:
+                                        modified_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                        batch_cells.append({"range": gspread.utils.rowcol_to_a1(sheet_row, col_map["처리 예정일"]), "values": [[modified_at]]})
                                 if batch_cells:
                                     sheet.batch_update(batch_cells)
                                     st.success("변경사항을 저장했습니다.")

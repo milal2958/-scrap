@@ -823,7 +823,7 @@ if login():
                         .fillna("")
                         .astype(str)
                         .str.strip()
-                        .str.replace(r"\\s+", " ", regex=True)
+                        .str.replace(r"\s+", " ", regex=True)
                         .str.lower()
                     )
                     # 같은 의미의 기타 사유를 대표 명칭으로 통합

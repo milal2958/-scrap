@@ -595,6 +595,10 @@ if login():
         if not df.empty:
             st.markdown("#### 📊 조별 처리 현황")
             df_stat = df.copy()
+            # 조별 처리 현황은 현재 월 생산 데이터만 집계
+            if "날짜" in df_stat.columns:
+                stat_date = pd.to_datetime(df_stat["날짜"], errors="coerce")
+                df_stat = df_stat[(stat_date.dt.year == datetime.now().year) & (stat_date.dt.month == datetime.now().month)]
             
             stat_cols = st.columns(4)
             shifts_list = ["A조", "B조", "C조", "D조"]

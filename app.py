@@ -7,6 +7,7 @@ import os
 import plotly.express as px
 import plotly.graph_objects as go
 import hashlib
+import re
 import time
 import json
 import secrets
@@ -642,7 +643,33 @@ if login():
                     st.info("해당 분류의 데이터가 없습니다.")
                 else:
                     split_cols = [c for c in ["처리 예정일", "처리 완료", "날짜", "생산 조", "발생 호기", "Comp'd명", "발생량", "단위"] if c in split_df.columns]
-                    st.dataframe(split_df[split_cols], hide_index=True, use_container_width=True)
+                    split_view = split_df[split_cols].copy()
+                    split_key = re.sub(r"[^a-zA-Z0-9_]", "_", split_category)
+                    st.data_editor(split_view, hide_index=True, use_container_width=True, key=f"split_editor_{split_key}", column_config={"처리 완료": st.column_config.CheckboxColumn("✅ 완료")})
+                    if st.button(f"💾 {split_category} 변경사항 저장", key=f"split_save_{split_key}"):
+                        editor_state = st.session_state.get(f"split_editor_{split_key}", {})
+                        edited_rows = editor_state.get("edited_rows", {})
+                        if edited_rows:
+                            client = connect_google_sheet_client()
+                            if client:
+                                sheet = client.open("현장스크랩데이터").sheet1
+                                headers = [str(col) for col in df.columns if col not in ["__sheet_row_idx", "__wt_ton"]]
+                                col_map = {name: idx + 1 for idx, name in enumerate(headers)}
+                                batch_cells = []
+                                for row_pos, changes in edited_rows.items():
+                                    source_row = split_df.iloc[int(row_pos)]
+                                    sheet_row = int(source_row["__sheet_row_idx"])
+                                    for col_name, value in changes.items():
+                                        if col_name in col_map:
+                                            value = "TRUE" if col_name == "처리 완료" and value else ("FALSE" if col_name == "처리 완료" else value)
+                                            batch_cells.append({"range": gspread.utils.rowcol_to_a1(sheet_row, col_map[col_name]), "values": [[str(value) if value is not None else ""]]})
+                                if batch_cells:
+                                    sheet.batch_update(batch_cells)
+                                    st.success("변경사항을 저장했습니다.")
+                                    del st.session_state["raw_df"]
+                                    st.rerun()
+                        else:
+                            st.info("변경된 데이터가 없습니다.")
 
             filtered_df = df.copy()
             if selected_completion != "전체" and '처리 완료' in filtered_df.columns:

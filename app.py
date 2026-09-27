@@ -819,7 +819,8 @@ if login():
                 analysis_cause = df_analysis["추정 원인"].fillna("").astype(str).str.strip()
                 if "발생상황 상세 설명" in df_analysis.columns:
                     detail = df_analysis["발생상황 상세 설명"].fillna("").astype(str).str.strip()
-                    detailed_other = (analysis_cause == "기타") & detail.ne("")
+                    meaningful_detail = detail.ne("") & ~detail.str.lower().isin(["-", "없음", "기타", "미입력", "none", "nan"])
+                    detailed_other = (analysis_cause == "기타") & meaningful_detail
                     analysis_cause = analysis_cause.mask(detailed_other, "기타: " + detail)
                 analysis_for_pivot = df_analysis.assign(__analysis_cause=analysis_cause)
                 cause_machine_table = analysis_for_pivot.pivot_table(

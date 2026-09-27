@@ -637,8 +637,8 @@ if login():
                 color_discrete_map={"처리완료": "#7ED321", "미입력건": "#F5A623"},
                 title="조별 처리 현황",
             )
-            combined_chart.update_traces(textposition="outside", width=0.32)
-            combined_chart.update_layout(height=300, bargap=0.45, bargroupgap=0.12, margin=dict(t=45, b=25, l=10, r=10), yaxis_title="건수", xaxis_title="", legend_title="")
+            combined_chart.update_traces(textposition="outside", width=0.26)
+            combined_chart.update_layout(height=300, bargap=0.50, bargroupgap=0.32, margin=dict(t=45, b=25, l=10, r=10), yaxis_title="건수", xaxis_title="", legend_title="")
             st.plotly_chart(combined_chart, use_container_width=True, config={"displayModeBar": False})
 
             st.markdown("---")

@@ -635,8 +635,8 @@ if login():
                             hovertemplate="%{label}: %{value}건<extra></extra>",
                         )
                         status_chart.update_layout(
-                            height=230,
-                            margin=dict(t=38, b=18, l=12, r=12),
+                            height=160,
+                            margin=dict(t=24, b=6, l=6, r=6),
                             showlegend=False,
                             title=dict(text=f"{shift_name} · 총 {done_count + missing_count}건", font=dict(size=14)),
                         )

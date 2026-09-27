@@ -642,6 +642,8 @@ if login():
             for split_title, split_category in split_categories:
                 st.markdown(f"##### {split_title}")
                 split_df = df[df["보류고무 성격"] == split_category].copy() if "보류고무 성격" in df.columns else pd.DataFrame()
+                if selected_completion != "전체" and "처리 완료" in split_df.columns:
+                    split_df = split_df[split_df["처리 완료"] == (selected_completion == "완료")]
                 if split_df.empty:
                     st.info("해당 분류의 데이터가 없습니다.")
                 else:
@@ -688,75 +690,7 @@ if login():
                         else:
                             st.info("변경된 데이터가 없습니다.")
 
-            filtered_df = df.copy()
-            if selected_completion != "전체" and '처리 완료' in filtered_df.columns:
-                filtered_df = filtered_df[filtered_df['처리 완료'] == (selected_completion == "완료")]
-            if "전체" not in selected_shifts and selected_shifts:
-                filtered_df = filtered_df[filtered_df['생산 조'].isin(selected_shifts)]
-            if "전체" not in selected_macs and selected_macs:
-                if '발생 호기' in filtered_df.columns:
-                    filtered_df = filtered_df[filtered_df['발생 호기'].isin(selected_macs)]
-
-            all_cols = [c for c in list(filtered_df.columns) if c != '__wt_ton']
-            display_order = ["처리 예정일", "처리 완료"] + [c for c in all_cols if c not in ["처리 예정일", "처리 완료", "요일", "__sheet_row_idx"]]
-            
-            try:
-                edited_df = st.data_editor(
-                    filtered_df,
-                    column_order=display_order,
-                    column_config={
-                        "처리 예정일": st.column_config.DateColumn("📅 처리 예정일", format="YYYY-MM-DD"),
-                        "처리 완료": st.column_config.CheckboxColumn("✅ 완료"),
-                        "날짜": st.column_config.DateColumn("생산 일자", disabled=True),
-                        "보류고무 성격": st.column_config.TextColumn("📋 보류고무 성격", disabled=True),
-                        "요일": st.column_config.TextColumn("요일", disabled=True),
-                        "발생량": st.column_config.NumberColumn("발생량", disabled=True),
-                        "추정 원인": st.column_config.SelectboxColumn("추정 원인", options=["리쿱영향", "롤러다이 영향", "혼합온도 상승", "설비이상", "트러블로 인한 설비정지", "원부재 영향", "기타"]),
-                        "처리 판단": st.column_config.SelectboxColumn("처리 판단", options=["선별대기", "스크랩장 이동", "유관부서 판단 필요", "자체처리"])
-                    },
-                    hide_index=True,
-                    use_container_width=True,
-                    key="main_data_editor"
-                )
-
-                if st.button("💾 보류고무 변경사항 저장하기", key="btn_save_grid_changes"):
-                    client = connect_google_sheet_client()
-                    if client:
-                        sheet = client.open("현장스크랩데이터").sheet1
-                        editor_state = st.session_state.get("main_data_editor", {})
-                        edited_rows = editor_state.get("edited_rows", {})
-                        
-                        if not edited_rows:
-                            st.info("ℹ️ 변경된 데이터가 없습니다.")
-                        else:
-                            with st.spinner("구글 시트 동기화 중..."):
-                                headers = [str(c) for c in df.columns if c not in ['__sheet_row_idx', '__wt_ton']]
-                                col_map = {name: i+1 for i, name in enumerate(headers)}
-                                batch_cells = []
-                                
-                                for position_idx, changes in edited_rows.items():
-                                    actual_row = filtered_df.iloc[int(position_idx)]
-                                    r_idx = int(actual_row['__sheet_row_idx'])
-                                    
-                                    if "처리 예정일" in changes and "처리 예정일" in col_map:
-                                        p_date_str = str(changes["처리 예정일"]) if changes["처리 예정일"] else ""
-                                        batch_cells.append({'range': gspread.utils.rowcol_to_a1(r_idx, col_map['처리 예정일']), 'values': [[p_date_str]]})
-                                    if "처리 완료" in changes and "처리 완료" in col_map:
-                                        is_done_str = "TRUE" if changes["처리 완료"] else "FALSE"
-                                        batch_cells.append({'range': gspread.utils.rowcol_to_a1(r_idx, col_map['처리 완료']), 'values': [[is_done_str]]})
-                                    if "추정 원인" in changes and "추정 원인" in col_map:
-                                        batch_cells.append({'range': gspread.utils.rowcol_to_a1(r_idx, col_map['추정 원인']), 'values': [[str(changes['추정 원인'])]]})
-                                    if "처리 판단" in changes and "처리 판단" in col_map:
-                                        batch_cells.append({'range': gspread.utils.rowcol_to_a1(r_idx, col_map['처리 판단']), 'values': [[str(changes['처리 판단'])]]})
-                                
-                                if batch_cells:
-                                    sheet.batch_update(batch_cells)
-                                    st.toast("🎉 보류고무 변경 내역이 반영되었습니다!", icon="💾")
-                                    if "raw_df" in st.session_state: del st.session_state["raw_df"]
-                                    time.sleep(0.5)
-                                    st.rerun()
-            except Exception as e:
-                st.error(f"데이터 에디터 로드 실패: {e}")
+            st.caption("통합 표는 숨김 처리되었습니다. 위의 분류별 표를 사용하세요.")
 
             st.markdown("---")
             

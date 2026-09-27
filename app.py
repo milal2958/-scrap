@@ -996,7 +996,7 @@ if login():
                     fig_monthly_scrap.update_layout(height=330, margin=dict(t=55, b=25, l=10, r=20), yaxis_title="중량 (ton)", xaxis_title="생산 월")
                     st.plotly_chart(fig_monthly_scrap, use_container_width=True, config={"displayModeBar": False})
 
-            else:
+            if df_filtered.empty:
                 st.warning("⚠️ 선택한 기간에 해당하는 분석 데이터가 존재하지 않습니다.")
         else:
             st.info("데이터를 먼저 등록해 주세요.")

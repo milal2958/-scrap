@@ -702,6 +702,8 @@ if login():
             st.markdown("#### 🚛 2. 실제 스크랩 처리 및 폐기 실적 현황 (별도 데이터)")
             if not df_disp.empty:
                 filtered_disp = df_disp.copy()
+                if "폐기 일자" in filtered_disp.columns:
+                    filtered_disp = filtered_disp.sort_values("폐기 일자", ascending=False, na_position="last")
                 if "전체" not in selected_shifts and selected_shifts:
                     if '실적 기록 조' in filtered_disp.columns:
                         filtered_disp = filtered_disp[filtered_disp['실적 기록 조'].isin(selected_shifts)]

@@ -617,33 +617,29 @@ if login():
                     plan_count, plan_weight = len(df_plan), df_plan['__wt_ton'].sum()
                     missing_count, missing_weight = len(df_missing), df_missing['__wt_ton'].sum()
                     
-                    with st.expander(f"Worker {shift_name} 현황", expanded=True):
-                        status_chart_df = pd.DataFrame({
-                            "상태": ["미입력건", "처리완료"],
-                            "건수": [missing_count, done_count],
-                        })
-                        status_chart = px.bar(
-                            status_chart_df,
-                            x="건수",
-                            y="상태",
-                            orientation="h",
-                            text="건수",
-                            color="상태",
-                            color_discrete_map={"처리완료": "#7ED321", "미입력건": "#F5A623"},
-                        )
-                        status_chart.update_traces(
-                            textposition="inside",
-                            hovertemplate="%{label}: %{x}건<extra></extra>",
-                        )
-                        status_chart.update_layout(
-                            height=125,
-                            margin=dict(t=28, b=4, l=4, r=10),
-                            showlegend=False,
-                            title=dict(text=f"{shift_name} · 총 {done_count + missing_count}건", font=dict(size=13)),
-                            xaxis=dict(title="", dtick=1, showgrid=False, zeroline=False),
-                            yaxis=dict(title="", showgrid=False),
-                        )
-                        st.plotly_chart(status_chart, use_container_width=True, config={"displayModeBar": False})
+            combined_status_rows = []
+            for shift_name in shifts_list:
+                shift_df = df_stat[df_stat["생산 조"] == shift_name]
+                done_n = int((shift_df["처리 완료"] == True).sum()) if "처리 완료" in shift_df.columns else 0
+                missing_n = int(((shift_df["처리 완료"] == False) & shift_df["처리 예정일"].isna()).sum()) if "처리 완료" in shift_df.columns and "처리 예정일" in shift_df.columns else 0
+                combined_status_rows.extend([
+                    {"조": shift_name, "상태": "처리완료", "건수": done_n},
+                    {"조": shift_name, "상태": "미입력건", "건수": missing_n},
+                ])
+            combined_status_df = pd.DataFrame(combined_status_rows)
+            combined_chart = px.bar(
+                combined_status_df,
+                x="조",
+                y="건수",
+                color="상태",
+                barmode="group",
+                text="건수",
+                color_discrete_map={"처리완료": "#7ED321", "미입력건": "#F5A623"},
+                title="조별 처리 현황",
+            )
+            combined_chart.update_traces(textposition="outside")
+            combined_chart.update_layout(height=300, margin=dict(t=45, b=25, l=10, r=10), yaxis_title="건수", xaxis_title="", legend_title="")
+            st.plotly_chart(combined_chart, use_container_width=True, config={"displayModeBar": False})
 
             st.markdown("---")
             st.write("🔍 **데이터 테이블 필터링**")

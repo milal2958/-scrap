@@ -632,9 +632,6 @@ if login():
                         )
                         status_chart.update_traces(
                             textinfo="label+value",
-                            insidetextorientation="horizontal",
-                            rotation=90,
-                            direction="clockwise",
                             hovertemplate="%{label}: %{value}건<extra></extra>",
                         )
                         status_chart.update_layout(

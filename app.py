@@ -666,7 +666,7 @@ if login():
                 if split_df.empty:
                     st.info("해당 분류의 데이터가 없습니다.")
                 else:
-                    split_cols = ["처리 예정일", "처리 완료"] + [c for c in split_df.columns if c not in ["처리 예정일", "처리 완료", "__wt_ton", "__sheet_row_idx", "요일"]]
+                    split_cols = ["처리 예정일", "처리 완료"] + [c for c in split_df.columns if c not in ["처리 예정일", "처리 완료", "보류고무 성격", "__wt_ton", "__sheet_row_idx", "요일"]]
                     split_view = split_df[split_cols].copy()
                     split_key = re.sub(r"[^a-zA-Z0-9_]", "_", split_category)
                     st.data_editor(

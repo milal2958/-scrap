@@ -725,9 +725,13 @@ if login():
                     if '실적 기록 조' in filtered_disp.columns:
                         filtered_disp = filtered_disp[filtered_disp['실적 기록 조'].isin(selected_shifts)]
                 if "폐기 일자" in filtered_disp.columns:
-                    filtered_disp = filtered_disp.assign(
-                        __sort_dispose_date=pd.to_datetime(filtered_disp["폐기 일자"], errors="coerce")
-                    ).sort_values("__sort_dispose_date", ascending=False, na_position="last").drop(columns=["__sort_dispose_date"])
+                    filtered_disp["폐기 일자"] = pd.to_datetime(filtered_disp["폐기 일자"], errors="coerce")
+                    filtered_disp = filtered_disp.sort_values(
+                        by="폐기 일자",
+                        ascending=False,
+                        na_position="last",
+                        kind="stable",
+                    )
                 
                 disp_cols_order = [c for c in list(filtered_disp.columns) if c != "__sheet_row_idx"]
                 

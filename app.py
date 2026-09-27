@@ -622,23 +622,26 @@ if login():
                             "상태": ["미입력건", "처리완료"],
                             "건수": [missing_count, done_count],
                         })
-                        status_chart = px.pie(
+                        status_chart = px.bar(
                             status_chart_df,
-                            names="상태",
-                            values="건수",
-                            hole=0.38,
+                            x="건수",
+                            y="상태",
+                            orientation="h",
+                            text="건수",
                             color="상태",
                             color_discrete_map={"처리완료": "#7ED321", "미입력건": "#F5A623"},
                         )
                         status_chart.update_traces(
-                            textinfo="label+value",
-                            hovertemplate="%{label}: %{value}건<extra></extra>",
+                            textposition="inside",
+                            hovertemplate="%{label}: %{x}건<extra></extra>",
                         )
                         status_chart.update_layout(
-                            height=160,
-                            margin=dict(t=24, b=6, l=6, r=6),
+                            height=125,
+                            margin=dict(t=28, b=4, l=4, r=10),
                             showlegend=False,
-                            title=dict(text=f"{shift_name} · 총 {done_count + missing_count}건", font=dict(size=14)),
+                            title=dict(text=f"{shift_name} · 총 {done_count + missing_count}건", font=dict(size=13)),
+                            xaxis=dict(title="", dtick=1, showgrid=False, zeroline=False),
+                            yaxis=dict(title="", showgrid=False),
                         )
                         st.plotly_chart(status_chart, use_container_width=True, config={"displayModeBar": False})
 

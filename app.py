@@ -629,6 +629,21 @@ if login():
 
             # --- [그리드 1] 보류고무 발생 현황 대시보드 ---
             st.markdown("#### 📥 1. 현장 보류고무 발생 및 마스터 관리 현황")
+            # 보류고무 성격별 분리 조회표
+            split_categories = [
+                ("🟦 스크랩 관련 고무보류", "스크랩 관련 고무보류"),
+                ("🟧 부적합 처리 전 고무보류", "부적합 처리 전 고무보류"),
+                ("🟩 기타 다른 사유로 고무보류", "기타 다른 사유로 고무보류"),
+            ]
+            for split_title, split_category in split_categories:
+                st.markdown(f"##### {split_title}")
+                split_df = df[df["보류고무 성격"] == split_category].copy() if "보류고무 성격" in df.columns else pd.DataFrame()
+                if split_df.empty:
+                    st.info("해당 분류의 데이터가 없습니다.")
+                else:
+                    split_cols = [c for c in ["처리 예정일", "처리 완료", "날짜", "생산 조", "발생 호기", "Comp'd명", "발생량", "단위"] if c in split_df.columns]
+                    st.dataframe(split_df[split_cols], hide_index=True, use_container_width=True)
+
             filtered_df = df.copy()
             if selected_completion != "전체" and '처리 완료' in filtered_df.columns:
                 filtered_df = filtered_df[filtered_df['처리 완료'] == (selected_completion == "완료")]

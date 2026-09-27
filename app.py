@@ -268,7 +268,7 @@ def get_data():
                     df['발생량'] = df['발생량'].astype(str).str.replace(',', '', regex=False).str.strip()
                     df['발생량'] = pd.to_numeric(df['발생량'], errors='coerce').fillna(0)
                 if '처리 예정일' in df.columns:
-                    df['처리 예정일'] = pd.to_datetime(df['처리 예정일'], errors='coerce').dt.date
+                    df['처리 예정일'] = pd.to_datetime(df['처리 예정일'], errors='coerce')
                 if '처리 완료' in df.columns:
                     df['처리 완료'] = df['처리 완료'].apply(lambda x: True if str(x).upper().strip() == 'TRUE' else False)
                 
